@@ -557,13 +557,12 @@
         const SHEET_ID = '1mxUWHA4WVTxorcDlnjo32M5bZ3AK1_aJC-q0UVd8mGI';
         const SHEET_GIDS = {
             MATCHES: '2138702001',
-            RESULTS: '1882748862',
-            STANDINGS_5X5: '0',
-            STANDINGS_3X3: '1486979535'
+            
+            STANDINGS_5X5: '1697716590',
+            STANDINGS_3X3: '1459040978'
         };
 
         let allMatches = [];
-        let allResults = [];
         let standings5x5 = [];
         let standings3x3 = [];
 
@@ -580,15 +579,13 @@
 
         async function loadData() {
             try {
-                const [matchesData, resultsData, standings5x5Data, standings3x3Data] = await Promise.all([
+                const [matchesData, standings5x5Data, standings3x3Data] = await Promise.all([
                     fetchSheetData(SHEET_GIDS.MATCHES),
-                    fetchSheetData(SHEET_GIDS.RESULTS),
                     fetchSheetData(SHEET_GIDS.STANDINGS_5X5),
                     fetchSheetData(SHEET_GIDS.STANDINGS_3X3)
                 ]);
 
                 allMatches = parseMatches(matchesData);
-                allResults = parseResults(resultsData);
                 standings5x5 = parseStandings(standings5x5Data);
                 standings3x3 = parseStandings(standings3x3Data);
                 
@@ -617,28 +614,27 @@
         }
 
         function parseMatches(data) {
-            return data.map(row => ({
-                date: row['วันที่'] || '',
-                time: row['เวลาเริ่ม'] || '',
-                type: row['ประเภท'] || '',
-                round: row['รอบ'] || '',
-                home: row['Home'] || '',
-                away: row['Away'] || '',
-                matchId: row['คู่แข่งขัน'] || '',
-                group: row['สาย/กลุ่ม'] || '',
-                note: row['หมายเหตุ'] || ''
-            })).filter(match => match.home || match.away);
+            return data.map(row => {
+                const scoreHome = row['คะแนน-home'] !== '' && row['คะแนน-home'] !== undefined ? parseInt(row['คะแนน-home']) : null;
+                const scoreAway = row['คะแนน-away'] !== '' && row['คะแนน-away'] !== undefined ? parseInt(row['คะแนน-away']) : null;
+                
+                return {
+                    date: row['วันที่'] || '',
+                    time: row['เวลาเริ่ม'] || '',
+                    type: row['ประเภท'] || '',
+                    round: row['รอบ'] || '',
+                    home: row['Home'] || '',
+                    away: row['Away'] || '',
+                    matchId: row['คู่แข่งขัน'] || '',
+                    group: row['สาย/กลุ่ม'] || '',
+                    note: row['หมายเหตุ'] || '',
+                    scoreHome: scoreHome,
+                    scoreAway: scoreAway
+                };
+            }).filter(match => match.home || match.away);
         }
 
-        function parseResults(data) {
-            return data.map(row => ({
-                home: row['Home'] || '',
-                scoreHome: row['คะแนน-home'] !== '' && row['คะแนน-home'] !== undefined ? row['คะแนน-home'] : null,
-                away: row['Away'] || '',
-                scoreAway: row['คะแนน-away'] !== '' && row['คะแนน-away'] !== undefined ? row['คะแนน-away'] : null,
-                matchId: row['คู่แข่งขัน'] || '',
-                result: row['ผลการแข่งขัน'] || ''
-            })).filter(result => result.home || result.away);
+)).filter(result => result.home || result.away);
         }
 
         function parseStandings(data) {
@@ -659,6 +655,20 @@
             }).filter(team => team.name && team.name.trim() !== '');
         }
 
+        // Parse Thai date for sorting
+        function parseThaiDate(dateStr) {
+            if (!dateStr) return new Date(0);
+            const parts = dateStr.trim().split(/[\/\-\.]/);
+            if (parts.length >= 2) {
+                const day = parseInt(parts[0]);
+                const month = parseInt(parts[1]) - 1;
+                let year = parts.length === 3 ? parseInt(parts[2]) : new Date().getFullYear() + 543;
+                if (year < 100) year += 2500;
+                return new Date(year - 543, month, day);
+            }
+            return new Date(0);
+        }
+
         function renderMatches() {
             const container = document.getElementById('matchesContainer');
             const typeFilter = document.getElementById('typeFilter').value;
@@ -669,11 +679,7 @@
                     (typeFilter === '5x5' && match.type === '5x5') ||
                     (typeFilter === '3x3' && match.type === '3x3');
                 
-                const result = allResults.find(r => 
-                    r.matchId === match.matchId ||
-                    (r.home === match.home && r.away === match.away)
-                );
-                const hasResult = result && result.scoreHome !== null && result.scoreHome !== '';
+                const hasResult = match.scoreHome !== null && match.scoreHome !== '';
                 
                 const statusMatch = statusFilter === 'all' ||
                     (statusFilter === 'upcoming' && !hasResult) ||
@@ -689,25 +695,41 @@
             });
 
             let html = '';
-            Object.keys(grouped).sort().forEach(date => {
+            Object.keys(grouped).sort((a, b) => parseThaiDate(a) - parseThaiDate(b)).forEach(date => {
                 html += `<div class="date-group"><div class="date-header">${formatThaiDate(date)}</div>`;
                 
-                grouped[date].forEach(match => {
-                    const result = allResults.find(r => 
-                        r.matchId === match.matchId ||
-                        (r.home === match.home && r.away === match.away)
-                    );
-                    const hasResult = result && result.scoreHome !== null && result.scoreHome !== '';
+                                grouped[date].forEach(match => {
+                    const hasResult = match.scoreHome !== null && match.scoreHome !== '';
                     const typeClass = match.type === '3x3' ? 'type-3x3' : 'type-5x5';
+                    
+                    // Determine winner/loser
+                    let homeClass = '';
+                    let awayClass = '';
+                    let homeScoreClass = '';
+                    let awayScoreClass = '';
+                    
+                    if (hasResult) {
+                        if (match.scoreHome > match.scoreAway) {
+                            homeClass = 'winner';
+                            awayClass = 'loser';
+                            homeScoreClass = 'winner-score';
+                            awayScoreClass = 'loser-score';
+                        } else if (match.scoreHome < match.scoreAway) {
+                            homeClass = 'loser';
+                            awayClass = 'winner';
+                            homeScoreClass = 'loser-score';
+                            awayScoreClass = 'winner-score';
+                        }
+                    }
                     
                     html += `
                         <div class="match-card ${hasResult ? 'finished' : ''}">
                             <div class="match-time"><div class="time">${match.time || '-'}</div></div>
                             <div class="match-type ${typeClass}">${match.type || '-'}</div>
-                            <div class="team"><div class="team-name">${match.home || '-'}</div></div>
-                            ${hasResult ? `<div class="score">${result.scoreHome}</div>` : `<div class="vs">VS</div>`}
-                            <div class="team"><div class="team-name">${match.away || '-'}</div></div>
-                            ${hasResult ? `<div class="score">${result.scoreAway}</div>` : `<div class="match-group">${match.group || '-'}</div>`}
+                            <div class="team ${homeClass}"><div class="team-name">${match.home || '-'}</div></div>
+                            ${hasResult ? `<div class="score ${homeScoreClass}">${match.scoreHome}</div>` : `<div class="vs">VS</div>`}
+                            <div class="team ${awayClass}"><div class="team-name">${match.away || '-'}</div></div>
+                            ${hasResult ? `<div class="score ${awayScoreClass}">${match.scoreAway}</div>` : `<div class="match-group">${match.group || '-'}</div>`}
                         </div>
                     `;
                 });
