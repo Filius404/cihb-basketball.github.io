@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>การแข่งขันกีฬาบาสเกตบอล บช.ก. ปี 2569</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sarabun', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .tab-button {
+            background: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .tab-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(0,0,0,0.15);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Match Schedule Styles */
+        .match-filters {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .filter-group select {
+            padding: 8px 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        .matches-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .date-group {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .date-header {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .match-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: 100px 80px 1fr 100px 1fr 120px;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .match-card:hover {
+            transform: translateX(5px);
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .match-card.finished {
+            background: #e8f5e9;
+        }
+
+        .match-time {
+            text-align: center;
+        }
+
+        .match-time .time {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .match-type {
+            text-align: center;
+            padding: 5px 10px;
+            background: #667eea;
+            color: white;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .team {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .team-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .score {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+        }
+
+        .vs {
+            text-align: center;
+            color: #999;
+            font-weight: bold;
+        }
+
+        .match-group {
+            text-align: center;
+            padding: 5px 10px;
+            background: #764ba2;
+            color: white;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        /* Standings Table Styles */
+        .standings-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+        }
+
+        .standings-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .standings-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .standings-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .standings-table thead {
+            background: #f8f9fa;
+        }
+
+        .standings-table th {
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            font-size: 0.9em;
+        }
+
+        .standings-table td {
+            padding: 12px 8px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .standings-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .standings-table .rank-1 {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            font-weight: bold;
+        }
+
+        .standings-table .rank-2 {
+            background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+            font-weight: bold;
+        }
+
+        .standings-table .rank-3 {
+            background: linear-gradient(135deg, #cd7f32 0%, #e6a04d 100%);
+            font-weight: bold;
+        }
+
+        .team-col {
+            text-align: left !important;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: white;
+            font-size: 1.5em;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .match-card {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .standings-container {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .team {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏀 การแข่งขันกีฬาบาสเกตบอล</h1>
+            <p>บัญชาการตำรวจกิจการ (บช.ก.) ปี 2569</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('schedule')">📅 โปรแกรมการแข่งขัน</button>
+            <button class="tab-button" onclick="switchTab('standings')">🏆 ตารางคะแนน</button>
+        </div>
+
+        <div id="schedule" class="tab-content active">
+            <div class="match-filters">
+                <div class="filter-group">
+                    <label>ประเภท:</label>
+                    <select id="typeFilter" onchange="filterMatches()">
+                        <option value="all">ทั้งหมด</option>
+                        <option value="5*5">5 vs 5</option>
+                        <option value="3*3">3 vs 3</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>สถานะ:</label>
+                    <select id="statusFilter" onchange="filterMatches()">
+                        <option value="all">ทั้งหมด</option>
+                        <option value="upcoming">ยังไม่แข่ง</option>
+                        <option value="finished">แข่งแล้ว</option>
+                    </select>
+                </div>
+            </div>
+            <div class="matches-container" id="matchesContainer">
+                <div class="loading">กำลังโหลดข้อมูล...</div>
+            </div>
+        </div>
+
+        <div id="standings" class="tab-content">
+            <div class="standings-container" id="standingsContainer">
+                <div class="loading">กำลังโหลดข้อมูล...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script>
+        // ============================================
+        // Configuration - แก้ไข SHEET_ID ตรงนี้
+        // ============================================
+        const SHEET_ID = '1mxUWHA4WVTxorcDlnjo32M5bZ3AK1_aJC-q0UVd8mGI';
+        
+        // ชื่อของแต่ละ Sheet (GID)
+        // หา GID ได้จาก URL เมื่อเปิด Sheet แต่ละตัว เช่น #gid=0
+        const SHEET_GIDS = {
+            MATCHES: '0',        // ตารางแข่ง
+            RESULTS: '1',        // ผลการแข่ง
+            STANDINGS_5X5: '2',  // ตารางคะแนน (5x5)
+            STANDINGS_3X3: '3'   // ตารางคะแนน2 (3x3)
+        };
+
+        let allMatches = [];
+        let allResults = [];
+        let standings5x5 = [];
+        let standings3x3 = [];
+
+        // ฟังก์ชันสร้าง URL สำหรับดึงข้อมูล CSV
+        function getSheetURL(gid) {
+            return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+        }
+
+        // Switch between tabs
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.tab-content');
+            const buttons = document.querySelectorAll('.tab-button');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            buttons.forEach(button => button.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Load all data
+        async function loadData() {
+            try {
+                // โหลดข้อมูลจากทุก Sheet พร้อมกัน
+                const [matchesData, resultsData, standings5x5Data, standings3x3Data] = await Promise.all([
+                    fetchSheetData(SHEET_GIDS.MATCHES),
+                    fetchSheetData(SHEET_GIDS.RESULTS),
+                    fetchSheetData(SHEET_GIDS.STANDINGS_5X5),
+                    fetchSheetData(SHEET_GIDS.STANDINGS_3X3)
+                ]);
+
+                allMatches = parseMatches(matchesData);
+                allResults = parseResults(resultsData);
+                standings5x5 = parseStandings(standings5x5Data);
+                standings3x3 = parseStandings(standings3x3Data);
+                
+                renderMatches();
+                renderStandings();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('matchesContainer').innerHTML = 
+                    '<div class="error">เกิดข้อผิดพลาดในการโหลดข้อมูล กรุณาตรวจสอบว่า Google Sheets เป็น "Anyone with the link can view"</div>';
+                document.getElementById('standingsContainer').innerHTML = 
+                    '<div class="error">เกิดข้อผิดพลาดในการโหลดข้อมูล กรุณาลองใหม่อีกครั้ง</div>';
+            }
+        }
+
+        // Fetch data from Google Sheets
+        async function fetchSheetData(gid) {
+            const url = getSheetURL(gid);
+            const response = await fetch(url);
+            const csvText = await response.text();
+            
+            return new Promise((resolve, reject) => {
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (results) => resolve(results.data),
+                    error: (error) => reject(error)
+                });
+            });
+        }
+
+        // Parse matches data
+        function parseMatches(data) {
+            return data.map(row => ({
+                date: row['วันที่'] || '',
+                time: row['เวลาเริ่ม'] || '',
+                type: row['ประเภท'] || '',
+                round: row['รอบ'] || '',
+                home: row['Home'] || '',
+                away: row['Away'] || '',
+                matchId: row['คู่แข่งขัน'] || '',
+                group: row['สาย/กลุ่ม'] || '',
+                note: row['หมายเหตุ'] || ''
+            })).filter(match => match.home || match.away);
+        }
+
+        // Parse results data
+        function parseResults(data) {
+            return data.map(row => ({
+                home: row['Home'] || '',
+                scoreHome: row['คะแนน-home'] !== '' && row['คะแนน-home'] !== undefined ? row['คะแนน-home'] : null,
+                away: row['Away'] || '',
+                scoreAway: row['คะแนน-away'] !== '' && row['คะแนน-away'] !== undefined ? row['คะแนน-away'] : null,
+                matchId: row['คู่แข่งขัน'] || '',
+                result: row['ผลการแข่งขัน'] || ''
+            })).filter(result => result.home || result.away);
+        }
+
+        // Parse standings data
+        function parseStandings(data) {
+            return data.map(row => {
+                const goalsFor = parseInt(row['ได้']) || 0;
+                const goalsAgainst = parseInt(row['เสีย']) || 0;
+                
+                return {
+                    name: row['ชื่อทีม'] || '',
+                    played: parseInt(row['แข่ง']) || 0,
+                    won: parseInt(row['ชนะ']) || 0,
+                    drawn: parseInt(row['เสมอ']) || 0,
+                    lost: parseInt(row['แพ้']) || 0,
+                    goalsFor: goalsFor,
+                    goalsAgainst: goalsAgainst,
+                    goalDiff: parseInt(row['ผลต่าง']) || (goalsFor - goalsAgainst),
+                    points: parseInt(row['คะแนน']) || 0,
+                    group: row['กลุ่ม'] || row['สาย/กลุ่ม'] || ''
+                };
+            }).filter(team => team.name);
+        }
+
+        // Render matches
+        function renderMatches() {
+            const container = document.getElementById('matchesContainer');
+            const typeFilter = document.getElementById('typeFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            // Filter matches
+            let filteredMatches = allMatches.filter(match => {
+                const typeMatch = typeFilter === 'all' || match.type === typeFilter;
+                
+                const result = allResults.find(r => 
+                    r.matchId === match.matchId ||
+                    (r.home === match.home && r.away === match.away)
+                );
+                const hasResult = result && result.scoreHome !== null && result.scoreHome !== '';
+                
+                const statusMatch = statusFilter === 'all' ||
+                    (statusFilter === 'upcoming' && !hasResult) ||
+                    (statusFilter === 'finished' && hasResult);
+                
+                return typeMatch && statusMatch;
+            });
+
+            // Group by date
+            const grouped = {};
+            filteredMatches.forEach(match => {
+                if (!grouped[match.date]) {
+                    grouped[match.date] = [];
+                }
+                grouped[match.date].push(match);
+            });
+
+            // Render
+            let html = '';
+            Object.keys(grouped).sort().forEach(date => {
+                html += `<div class="date-group">
+                    <div class="date-header">${formatThaiDate(date)}</div>`;
+                
+                grouped[date].forEach(match => {
+                    const result = allResults.find(r => 
+                        r.matchId === match.matchId ||
+                        (r.home === match.home && r.away === match.away)
+                    );
+                    const hasResult = result && result.scoreHome !== null && result.scoreHome !== '';
+                    
+                    html += `
+                        <div class="match-card ${hasResult ? 'finished' : ''}">
+                            <div class="match-time">
+                                <div class="time">${match.time || '-'}</div>
+                            </div>
+                            <div class="match-type">${match.type || '-'}</div>
+                            <div class="team">
+                                <div class="team-name">${match.home || '-'}</div>
+                            </div>
+                            ${hasResult ? `
+                                <div class="score">${result.scoreHome}</div>
+                            ` : `
+                                <div class="vs">VS</div>
+                            `}
+                            <div class="team">
+                                <div class="team-name">${match.away || '-'}</div>
+                            </div>
+                            ${hasResult ? `
+                                <div class="score">${result.scoreAway}</div>
+                            ` : `
+                                <div class="match-group">${match.group || '-'}</div>
+                            `}
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            });
+
+            container.innerHTML = html || '<div class="loading">ไม่พบข้อมูลการแข่งขัน</div>';
+        }
+
+        // Render standings
+        function renderStandings() {
+            const container = document.getElementById('standingsContainer');
+            
+            let html = '';
+            
+            // 5x5 Standings
+            if (standings5x5.length > 0) {
+                const groups5x5 = {};
+                standings5x5.forEach(team => {
+                    const group = team.group || 'ทั่วไป';
+                    if (!groups5x5[group]) groups5x5[group] = [];
+                    groups5x5[group].push(team);
+                });
+
+                Object.keys(groups5x5).forEach(group => {
+                    html += `
+                        <div class="standings-card">
+                            <div class="standings-title">ตารางคะแนน 5 vs 5 - ${group}</div>
+                            <table class="standings-table">
+                                <thead>
+                                    <tr>
+                                        <th>อันดับ</th>
+                                        <th>ทีม</th>
+                                        <th>แข่ง</th>
+                                        <th>ชนะ</th>
+                                        <th>เสมอ</th>
+                                        <th>แพ้</th>
+                                        <th>ได้</th>
+                                        <th>เสีย</th>
+                                        <th>+/-</th>
+                                        <th>คะแนน</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    groups5x5[group]
+                        .sort((a, b) => b.points - a.points || (b.goalDiff - a.goalDiff))
+                        .forEach((team, index) => {
+                            const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+                            html += `
+                                <tr class="${rankClass}">
+                                    <td>${index + 1}</td>
+                                    <td class="team-col">${team.name}</td>
+                                    <td>${team.played}</td>
+                                    <td>${team.won}</td>
+                                    <td>${team.drawn}</td>
+                                    <td>${team.lost}</td>
+                                    <td>${team.goalsFor}</td>
+                                    <td>${team.goalsAgainst}</td>
+                                    <td>${team.goalDiff > 0 ? '+' : ''}${team.goalDiff}</td>
+                                    <td><strong>${team.points}</strong></td>
+                                </tr>
+                            `;
+                        });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                });
+            }
+
+            // 3x3 Standings
+            if (standings3x3.length > 0) {
+                const groups3x3 = {};
+                standings3x3.forEach(team => {
+                    const group = team.group || 'ทั่วไป';
+                    if (!groups3x3[group]) groups3x3[group] = [];
+                    groups3x3[group].push(team);
+                });
+
+                Object.keys(groups3x3).forEach(group => {
+                    html += `
+                        <div class="standings-card">
+                            <div class="standings-title">ตารางคะแนน 3 vs 3 - ${group}</div>
+                            <table class="standings-table">
+                                <thead>
+                                    <tr>
+                                        <th>อันดับ</th>
+                                        <th>ทีม</th>
+                                        <th>แข่ง</th>
+                                        <th>ชนะ</th>
+                                        <th>เสมอ</th>
+                                        <th>แพ้</th>
+                                        <th>ได้</th>
+                                        <th>เสีย</th>
+                                        <th>+/-</th>
+                                        <th>คะแนน</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    groups3x3[group]
+                        .sort((a, b) => b.points - a.points || (b.goalDiff - a.goalDiff))
+                        .forEach((team, index) => {
+                            const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+                            html += `
+                                <tr class="${rankClass}">
+                                    <td>${index + 1}</td>
+                                    <td class="team-col">${team.name}</td>
+                                    <td>${team.played}</td>
+                                    <td>${team.won}</td>
+                                    <td>${team.drawn}</td>
+                                    <td>${team.lost}</td>
+                                    <td>${team.goalsFor}</td>
+                                    <td>${team.goalsAgainst}</td>
+                                    <td>${team.goalDiff > 0 ? '+' : ''}${team.goalDiff}</td>
+                                    <td><strong>${team.points}</strong></td>
+                                </tr>
+                            `;
+                        });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                });
+            }
+
+            container.innerHTML = html || '<div class="loading">ไม่พบข้อมูลตารางคะแนน</div>';
+        }
+
+        // Filter matches
+        function filterMatches() {
+            renderMatches();
+        }
+
+        // Format Thai date
+        function formatThaiDate(dateStr) {
+            if (!dateStr) return '';
+            
+            const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 
+                          'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+            
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                const day = parseInt(parts[0]);
+                const month = parseInt(parts[1]) - 1;
+                const year = parseInt(parts[2]);
+                const date = new Date(year - 543, month, day); // แปลง พ.ศ. เป็น ค.ศ.
+                const dayName = days[date.getDay()];
+                return `${dayName}ที่ ${day} ${months[month]} ${year}`;
+            }
+            return dateStr;
+        }
+
+        // Load data on page load
+        loadData();
+
+        // Refresh data every 30 seconds
+        setInterval(loadData, 30000);
+    </script>
+</body>
+</html>
