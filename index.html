@@ -48,6 +48,7 @@
             gap: 15px;
             margin-bottom: 30px;
             justify-content: center;
+            flex-wrap: wrap;
         }
 
         .tab-button {
@@ -176,6 +177,14 @@
             font-size: 0.9em;
         }
 
+        .match-type.type-5x5 {
+            background: #667eea;
+        }
+
+        .match-type.type-3x3 {
+            background: #10b981;
+        }
+
         .team {
             display: flex;
             align-items: center;
@@ -213,7 +222,7 @@
         /* Standings Table Styles */
         .standings-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
             gap: 30px;
         }
 
@@ -233,6 +242,10 @@
             border-radius: 10px;
             margin-bottom: 20px;
             text-align: center;
+        }
+
+        .standings-title.type-3x3 {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         }
 
         .standings-table {
@@ -343,8 +356,8 @@
                     <label>ประเภท:</label>
                     <select id="typeFilter" onchange="filterMatches()">
                         <option value="all">ทั้งหมด</option>
-                        <option value="5*5">5 vs 5</option>
-                        <option value="3*3">3 vs 3</option>
+                        <option value="5x5">5 vs 5</option>
+                        <option value="3x3">3 vs 3</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -371,17 +384,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script>
         // ============================================
-        // Configuration - แก้ไข SHEET_ID ตรงนี้
+        // Configuration
         // ============================================
         const SHEET_ID = '1mxUWHA4WVTxorcDlnjo32M5bZ3AK1_aJC-q0UVd8mGI';
         
-        // ชื่อของแต่ละ Sheet (GID)
-        // หา GID ได้จาก URL เมื่อเปิด Sheet แต่ละตัว เช่น #gid=0
+        // GID ของแต่ละ Sheet
         const SHEET_GIDS = {
-            MATCHES: '0',        // ตารางแข่ง
-            RESULTS: '1',        // ผลการแข่ง
-            STANDINGS_5X5: '2',  // ตารางคะแนน (5x5)
-            STANDINGS_3X3: '3'   // ตารางคะแนน2 (3x3)
+            MATCHES: '2138702001',      // ตาราง3
+            RESULTS: '1882748862',      // ตาราง2  
+            STANDINGS_5X5: '0',         // team5
+            STANDINGS_3X3: '1486979535' // team3
         };
 
         let allMatches = [];
@@ -422,6 +434,11 @@
                 standings5x5 = parseStandings(standings5x5Data);
                 standings3x3 = parseStandings(standings3x3Data);
                 
+                console.log('Matches:', allMatches.length);
+                console.log('Results:', allResults.length);
+                console.log('Standings 5x5:', standings5x5.length);
+                console.log('Standings 3x3:', standings3x3.length);
+                
                 renderMatches();
                 renderStandings();
             } catch (error) {
@@ -449,7 +466,7 @@
             });
         }
 
-        // Parse matches data
+        // Parse matches data - ตาราง3
         function parseMatches(data) {
             return data.map(row => ({
                 date: row['วันที่'] || '',
@@ -464,7 +481,7 @@
             })).filter(match => match.home || match.away);
         }
 
-        // Parse results data
+        // Parse results data - ตาราง2
         function parseResults(data) {
             return data.map(row => ({
                 home: row['Home'] || '',
@@ -476,7 +493,7 @@
             })).filter(result => result.home || result.away);
         }
 
-        // Parse standings data
+        // Parse standings data - team5 และ team3
         function parseStandings(data) {
             return data.map(row => {
                 const goalsFor = parseInt(row['ได้']) || 0;
@@ -491,10 +508,9 @@
                     goalsFor: goalsFor,
                     goalsAgainst: goalsAgainst,
                     goalDiff: parseInt(row['ผลต่าง']) || (goalsFor - goalsAgainst),
-                    points: parseInt(row['คะแนน']) || 0,
-                    group: row['กลุ่ม'] || row['สาย/กลุ่ม'] || ''
+                    points: parseInt(row['คะแนน']) || 0
                 };
-            }).filter(team => team.name);
+            }).filter(team => team.name && team.name.trim() !== '');
         }
 
         // Render matches
@@ -505,7 +521,9 @@
             
             // Filter matches
             let filteredMatches = allMatches.filter(match => {
-                const typeMatch = typeFilter === 'all' || match.type === typeFilter;
+                const typeMatch = typeFilter === 'all' || 
+                    (typeFilter === '5x5' && match.type === '5x5') ||
+                    (typeFilter === '3x3' && match.type === '3x3');
                 
                 const result = allResults.find(r => 
                     r.matchId === match.matchId ||
@@ -541,13 +559,14 @@
                         (r.home === match.home && r.away === match.away)
                     );
                     const hasResult = result && result.scoreHome !== null && result.scoreHome !== '';
+                    const typeClass = match.type === '3x3' ? 'type-3x3' : 'type-5x5';
                     
                     html += `
                         <div class="match-card ${hasResult ? 'finished' : ''}">
                             <div class="match-time">
                                 <div class="time">${match.time || '-'}</div>
                             </div>
-                            <div class="match-type">${match.type || '-'}</div>
+                            <div class="match-type ${typeClass}">${match.type || '-'}</div>
                             <div class="team">
                                 <div class="team-name">${match.home || '-'}</div>
                             </div>
@@ -577,125 +596,106 @@
         // Render standings
         function renderStandings() {
             const container = document.getElementById('standingsContainer');
-            
             let html = '';
             
             // 5x5 Standings
             if (standings5x5.length > 0) {
-                const groups5x5 = {};
-                standings5x5.forEach(team => {
-                    const group = team.group || 'ทั่วไป';
-                    if (!groups5x5[group]) groups5x5[group] = [];
-                    groups5x5[group].push(team);
-                });
-
-                Object.keys(groups5x5).forEach(group => {
-                    html += `
-                        <div class="standings-card">
-                            <div class="standings-title">ตารางคะแนน 5 vs 5 - ${group}</div>
-                            <table class="standings-table">
-                                <thead>
-                                    <tr>
-                                        <th>อันดับ</th>
-                                        <th>ทีม</th>
-                                        <th>แข่ง</th>
-                                        <th>ชนะ</th>
-                                        <th>เสมอ</th>
-                                        <th>แพ้</th>
-                                        <th>ได้</th>
-                                        <th>เสีย</th>
-                                        <th>+/-</th>
-                                        <th>คะแนน</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                    `;
-                    
-                    groups5x5[group]
-                        .sort((a, b) => b.points - a.points || (b.goalDiff - a.goalDiff))
-                        .forEach((team, index) => {
-                            const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
-                            html += `
-                                <tr class="${rankClass}">
-                                    <td>${index + 1}</td>
-                                    <td class="team-col">${team.name}</td>
-                                    <td>${team.played}</td>
-                                    <td>${team.won}</td>
-                                    <td>${team.drawn}</td>
-                                    <td>${team.lost}</td>
-                                    <td>${team.goalsFor}</td>
-                                    <td>${team.goalsAgainst}</td>
-                                    <td>${team.goalDiff > 0 ? '+' : ''}${team.goalDiff}</td>
-                                    <td><strong>${team.points}</strong></td>
+                html += `
+                    <div class="standings-card">
+                        <div class="standings-title">ตารางคะแนน 5 vs 5</div>
+                        <table class="standings-table">
+                            <thead>
+                                <tr>
+                                    <th>อันดับ</th>
+                                    <th>ทีม</th>
+                                    <th>แข่ง</th>
+                                    <th>ชนะ</th>
+                                    <th>เสมอ</th>
+                                    <th>แพ้</th>
+                                    <th>ได้</th>
+                                    <th>เสีย</th>
+                                    <th>+/-</th>
+                                    <th>คะแนน</th>
                                 </tr>
-                            `;
-                        });
-                    
-                    html += `
-                                </tbody>
-                            </table>
-                        </div>
-                    `;
-                });
+                            </thead>
+                            <tbody>
+                `;
+                
+                standings5x5
+                    .sort((a, b) => b.points - a.points || (b.goalDiff - a.goalDiff))
+                    .forEach((team, index) => {
+                        const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+                        html += `
+                            <tr class="${rankClass}">
+                                <td>${index + 1}</td>
+                                <td class="team-col">${team.name}</td>
+                                <td>${team.played}</td>
+                                <td>${team.won}</td>
+                                <td>${team.drawn}</td>
+                                <td>${team.lost}</td>
+                                <td>${team.goalsFor}</td>
+                                <td>${team.goalsAgainst}</td>
+                                <td>${team.goalDiff > 0 ? '+' : ''}${team.goalDiff}</td>
+                                <td><strong>${team.points}</strong></td>
+                            </tr>
+                        `;
+                    });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
             }
 
             // 3x3 Standings
             if (standings3x3.length > 0) {
-                const groups3x3 = {};
-                standings3x3.forEach(team => {
-                    const group = team.group || 'ทั่วไป';
-                    if (!groups3x3[group]) groups3x3[group] = [];
-                    groups3x3[group].push(team);
-                });
-
-                Object.keys(groups3x3).forEach(group => {
-                    html += `
-                        <div class="standings-card">
-                            <div class="standings-title">ตารางคะแนน 3 vs 3 - ${group}</div>
-                            <table class="standings-table">
-                                <thead>
-                                    <tr>
-                                        <th>อันดับ</th>
-                                        <th>ทีม</th>
-                                        <th>แข่ง</th>
-                                        <th>ชนะ</th>
-                                        <th>เสมอ</th>
-                                        <th>แพ้</th>
-                                        <th>ได้</th>
-                                        <th>เสีย</th>
-                                        <th>+/-</th>
-                                        <th>คะแนน</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                    `;
-                    
-                    groups3x3[group]
-                        .sort((a, b) => b.points - a.points || (b.goalDiff - a.goalDiff))
-                        .forEach((team, index) => {
-                            const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
-                            html += `
-                                <tr class="${rankClass}">
-                                    <td>${index + 1}</td>
-                                    <td class="team-col">${team.name}</td>
-                                    <td>${team.played}</td>
-                                    <td>${team.won}</td>
-                                    <td>${team.drawn}</td>
-                                    <td>${team.lost}</td>
-                                    <td>${team.goalsFor}</td>
-                                    <td>${team.goalsAgainst}</td>
-                                    <td>${team.goalDiff > 0 ? '+' : ''}${team.goalDiff}</td>
-                                    <td><strong>${team.points}</strong></td>
+                html += `
+                    <div class="standings-card">
+                        <div class="standings-title type-3x3">ตารางคะแนน 3 vs 3</div>
+                        <table class="standings-table">
+                            <thead>
+                                <tr>
+                                    <th>อันดับ</th>
+                                    <th>ทีม</th>
+                                    <th>แข่ง</th>
+                                    <th>ชนะ</th>
+                                    <th>เสมอ</th>
+                                    <th>แพ้</th>
+                                    <th>ได้</th>
+                                    <th>เสีย</th>
+                                    <th>+/-</th>
+                                    <th>คะแนน</th>
                                 </tr>
-                            `;
-                        });
-                    
-                    html += `
-                                </tbody>
-                            </table>
-                        </div>
-                    `;
-                });
+                            </thead>
+                            <tbody>
+                `;
+                
+                standings3x3
+                    .sort((a, b) => b.points - a.points || (b.goalDiff - a.goalDiff))
+                    .forEach((team, index) => {
+                        const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+                        html += `
+                            <tr class="${rankClass}">
+                                <td>${index + 1}</td>
+                                <td class="team-col">${team.name}</td>
+                                <td>${team.played}</td>
+                                <td>${team.won}</td>
+                                <td>${team.drawn}</td>
+                                <td>${team.lost}</td>
+                                <td>${team.goalsFor}</td>
+                                <td>${team.goalsAgainst}</td>
+                                <td>${team.goalDiff > 0 ? '+' : ''}${team.goalDiff}</td>
+                                <td><strong>${team.points}</strong></td>
+                            </tr>
+                        `;
+                    });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
             }
 
             container.innerHTML = html || '<div class="loading">ไม่พบข้อมูลตารางคะแนน</div>';
@@ -714,15 +714,28 @@
                           'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
             const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
             
-            const parts = dateStr.split('/');
-            if (parts.length === 3) {
+            // ลองแยกรูปแบบวันที่
+            const parts = dateStr.trim().split(/[\/\-\.]/);
+            
+            if (parts.length >= 2) {
                 const day = parseInt(parts[0]);
                 const month = parseInt(parts[1]) - 1;
-                const year = parseInt(parts[2]);
-                const date = new Date(year - 543, month, day); // แปลง พ.ศ. เป็น ค.ศ.
-                const dayName = days[date.getDay()];
-                return `${dayName}ที่ ${day} ${months[month]} ${year}`;
+                let year = parts.length === 3 ? parseInt(parts[2]) : new Date().getFullYear() + 543;
+                
+                // ถ้าเป็น พ.ศ. 2 หลัก (เช่น 69) ให้เพิ่ม 2500
+                if (year < 100) {
+                    year += 2500;
+                }
+                
+                // แปลง พ.ศ. เป็น ค.ศ. สำหรับสร้าง Date object
+                const date = new Date(year - 543, month, day);
+                
+                if (!isNaN(date.getTime())) {
+                    const dayName = days[date.getDay()];
+                    return `${dayName}ที่ ${day} ${months[month]} ${year}`;
+                }
             }
+            
             return dateStr;
         }
 
